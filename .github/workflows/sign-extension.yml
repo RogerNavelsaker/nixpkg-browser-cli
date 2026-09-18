@@ -1,0 +1,65 @@
+name: Build and Sign Firefox Extension
+
+on:
+  push:
+    tags:
+      - "v*"
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  sign-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install web-ext
+        run: npm install -g web-ext
+
+      - name: Fetch upstream extension source
+        run: |
+          mkdir -p extension-src
+          git clone --depth 1 https://github.com/Mic92/mics-skills.git upstream
+          cp -r upstream/browser-cli/extension/* extension-src/
+          echo "Extension files:"
+          ls -la extension-src
+
+      - name: Sign extension with Mozilla AMO
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: |
+          if [ -z "$WEB_EXT_API_KEY" ] || [ -z "$WEB_EXT_API_SECRET" ]; then
+            echo "::error::AMO_JWT_ISSUER and AMO_JWT_SECRET secrets are required."
+            exit 1
+          fi
+
+          mkdir -p signed-dist
+          web-ext sign \
+            --source-dir extension-src \
+            --artifacts-dir signed-dist \
+            --channel unlisted \
+            --api-key "$WEB_EXT_API_KEY" \
+            --api-secret "$WEB_EXT_API_SECRET"
+
+          echo "Signed artifact:"
+          ls -la signed-dist/
+          # Standardize name
+          cp signed-dist/*.xpi signed-dist/browser-cli-controller@thalheim.io.xpi
+
+      - name: Release Signed Extension
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        with:
+          tag_name: ${{ github.ref_name || 'latest' }}
+          files: signed-dist/browser-cli-controller@thalheim.io.xpi
+          generate_release_notes: true
