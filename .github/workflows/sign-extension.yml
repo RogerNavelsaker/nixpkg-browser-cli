@@ -20,18 +20,23 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
-      - name: Install web-ext
-        run: npm install -g web-ext
+      - name: Install web-ext and jq
+        run: sudo apt-get update && sudo apt-get install -y jq && npm install -g web-ext
 
-      - name: Fetch upstream extension source
+      - name: Fetch upstream extension source and patch strict_min_version
         run: |
           mkdir -p extension-src
           git clone --depth 1 https://github.com/Mic92/mics-skills.git upstream
           cp -r upstream/browser-cli/extension/* extension-src/
-          echo "Extension files:"
-          ls -la extension-src
+          
+          # AMO requires strict_min_version to be >= 58.0
+          jq '.applications.gecko.strict_min_version = "58.0"' extension-src/manifest.json > extension-src/manifest.json.tmp
+          mv extension-src/manifest.json.tmp extension-src/manifest.json
+          
+          echo "Patched manifest.json:"
+          cat extension-src/manifest.json
 
       - name: Sign extension with Mozilla AMO
         env:
@@ -60,6 +65,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         with:
-          tag_name: ${{ github.ref_name || 'latest' }}
+          tag_name: v0.4.0-signed
           files: signed-dist/browser-cli-controller@thalheim.io.xpi
           generate_release_notes: true
