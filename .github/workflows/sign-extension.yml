@@ -31,14 +31,16 @@ jobs:
           git clone --depth 1 https://github.com/Mic92/mics-skills.git upstream
           cp -r upstream/browser-cli/extension/* extension-src/
           
-          # AMO requires strict_min_version >= 58.0 and a unique version number
-          # Using timestamp to ensure unique incremental version on AMO
-          NEW_VER="1.2.1.$(date +%s)"
+          # AMO requires 1 to 4 dot-separated integers and strict_min_version >= 58.0
+          DAYS=$(($(date +%s) / 86400))
+          SECS=$(($(date +%s) % 86400))
+          NEW_VER="1.3.${DAYS}.${SECS}"
+          
           jq --arg ver "$NEW_VER" '.version = $ver | .applications.gecko.strict_min_version = "58.0"' \
             extension-src/manifest.json > extension-src/manifest.json.tmp
           mv extension-src/manifest.json.tmp extension-src/manifest.json
           
-          echo "Patched manifest.json with version $NEW_VER:"
+          echo "Patched manifest.json with compliant version $NEW_VER:"
           cat extension-src/manifest.json
 
       - name: Sign extension with Mozilla AMO
