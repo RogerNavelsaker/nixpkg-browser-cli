@@ -12,17 +12,22 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
         upstreamCli = mics-skills.packages.${system}.browser-cli;
-        upstreamExt = mics-skills.packages.${system}.browser-cli-extension;
+        # Fetch the official Mozilla AMO signed XPI released by our CI pipeline
+        signedExt = pkgs.fetchurl {
+          name = "browser-cli-signed.xpi";
+          url = "https://github.com/RogerNavelsaker/nixpkg-browser-cli/releases/download/v0.4.0-signed/browser-cli-controller@thalheim.io.xpi";
+          sha256 = "0zjgv30mip7h0msm41mzd00k6pgynnnla2bg0q7hgwn239aw8q17";
+        };
 
         extId = "browser-cli-controller@thalheim.io";
 
-        # Generate policies.json pointing to the bundled XPI in the nix store
+        # Generate policies.json pointing to the bundled signed XPI in the nix store
         policiesJson = pkgs.writeText "policies.json" (builtins.toJSON {
           policies = {
             ExtensionSettings = {
               "${extId}" = {
                 installation_mode = "force_installed";
-                install_url = "file://${upstreamExt}/browser-cli-extension.xpi";
+                install_url = "file://${signedExt}";
               };
             };
           };
@@ -35,7 +40,7 @@
           postBuild = ''
             # 1. Provide the extension XPI in share/
             mkdir -p $out/share/browser-cli/extensions
-            cp ${upstreamExt}/browser-cli-extension.xpi $out/share/browser-cli/extensions/${extId}.xpi
+            cp ${signedExt} $out/share/browser-cli/extensions/${extId}.xpi
 
             # 2. Provide the policies.json for user/system symlinking
             mkdir -p $out/share/browser-cli/policies
@@ -96,7 +101,7 @@
       {
         packages.default = browserCliPackage;
         packages.browser-cli = browserCliPackage;
-        packages.extension = upstreamExt;
+        packages.extension = signedExt;
         packages.policies = pkgs.runCommand "browser-cli-policies" {} ''
           mkdir -p $out
           cp ${policiesJson} $out/policies.json
