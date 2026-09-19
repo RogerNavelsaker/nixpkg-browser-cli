@@ -25,17 +25,20 @@ jobs:
       - name: Install web-ext and jq
         run: sudo apt-get update && sudo apt-get install -y jq && npm install -g web-ext
 
-      - name: Fetch upstream extension source and patch strict_min_version
+      - name: Fetch upstream extension source and bump version
         run: |
           mkdir -p extension-src
           git clone --depth 1 https://github.com/Mic92/mics-skills.git upstream
           cp -r upstream/browser-cli/extension/* extension-src/
           
-          # AMO requires strict_min_version to be >= 58.0
-          jq '.applications.gecko.strict_min_version = "58.0"' extension-src/manifest.json > extension-src/manifest.json.tmp
+          # AMO requires strict_min_version >= 58.0 and a unique version number
+          # Using timestamp to ensure unique incremental version on AMO
+          NEW_VER="1.2.1.$(date +%s)"
+          jq --arg ver "$NEW_VER" '.version = $ver | .applications.gecko.strict_min_version = "58.0"' \
+            extension-src/manifest.json > extension-src/manifest.json.tmp
           mv extension-src/manifest.json.tmp extension-src/manifest.json
           
-          echo "Patched manifest.json:"
+          echo "Patched manifest.json with version $NEW_VER:"
           cat extension-src/manifest.json
 
       - name: Sign extension with Mozilla AMO
