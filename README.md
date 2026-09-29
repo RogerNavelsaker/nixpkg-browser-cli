@@ -7,12 +7,6 @@ Nix flake package for [`browser-cli`](https://github.com/Mic92/mics-skills/tree/
 
 ## Installation
 
-### Via Flox
-In `~/.flox/env/manifest.toml`:
-```toml
-browser-cli.flake = "github:RogerNavelsaker/nixpkg-browser-cli"
-```
-
 ### Via Nix Flake
 ```bash
 nix profile install github:RogerNavelsaker/nixpkg-browser-cli
