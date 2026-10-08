@@ -45,3 +45,11 @@
   prompt: |
     Sample merged work from the past 7 days against docs/CONSTITUTION.md
     and compile a concise digest seed.
+
+- id: documentationwatch-weekly-p7n1gdaf8ze5
+  kind: cron
+  cron: '09 7 * * 2'
+  role: documentationwatch
+  timezone: Europe/Madrid
+  prompt: |
+    Inspect recent merged changes and their related documentation. Update only concrete, verified documentation drift; keep edits docs-only and run available documentation checks. If documentation is current, report that without committing.
