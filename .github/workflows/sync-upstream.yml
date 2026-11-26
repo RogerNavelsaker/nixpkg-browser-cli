@@ -27,7 +27,7 @@ jobs:
           elif [ -f "scripts/sync-from-upstream.sh" ]; then
             bash scripts/sync-from-upstream.sh
           else
-            nix run nixpkgs#nix-update -- --flake default
+            nix flake update --accept-flake-config
           fi
 
       - name: Automatic sync
