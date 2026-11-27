@@ -1,0 +1,8 @@
+{
+  "kind": "git-head",
+  "upstream": "https://github.com/Mic92/mics-skills.git",
+  "version_file": "flake.lock",
+  "version_jq": ".nodes[\"mics-skills\"].locked.rev",
+  "pinned_paths": [],
+  "sync_script": "nix flake update mics-skills --accept-flake-config"
+}
